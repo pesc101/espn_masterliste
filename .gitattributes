@@ -1,2 +1,5 @@
 # Suppress diffs for Jupyter notebooks
 *.ipynb -diff
+*.ipynb linguist-vendored
+*.ipynb linguist-documentation
+*.ipynb linguist-generated=true
