@@ -1,9 +1,14 @@
 """
 Streamlit app – Masterliste Updater
 ====================================
-Upload the five source files (Bestellungen, Kontakte, 3× Masterlisten) and the
-PDF fee schedule, preview the derived new-members table, then download the
-three updated masterlists as semicolon-separated CSVs.
+Upload the two source files (Bestellungen, Kontakte) and the PDF fee schedule,
+preview the derived new-members table, then download the three masterlists as
+semicolon-separated CSVs.
+
+Column schemas are fixed and match the reference files:
+  • IPNA Masterliste         – no Membership Number #, includes IPNA amount
+  • Masterliste neue Mitgl.  – includes Membership Number #, no IPNA amount
+  • Masterliste Vollständig  – same structure as neue Mitglieder
 """
 
 from __future__ import annotations
@@ -24,8 +29,54 @@ st.set_page_config(
 st.title("📋 Masterliste Updater")
 st.markdown(
     "Upload the export files and the PDF fee schedule, then download the "
-    "updated masterlists."
+    "generated masterlists."
 )
+
+# ── Fixed output column schemas ────────────────────────────────────────────────
+COLS_IPNA: list[str] = [
+    "Titel",
+    "First Name",
+    "Last Name",
+    "Email",
+    "Phone",
+    "Birthdate",
+    "Address",
+    "City",
+    "Zipcode",
+    "Country",
+    "State",
+    "Company",
+    "Member since",
+    "ESPN&IPNA amount",
+    "IPNA amount",
+    "Membership",
+    "Gender",
+    "Note",
+]
+
+COLS_NEUE: list[str] = [
+    "Membership Number #",
+    "Titel",
+    "First Name",
+    "Last Name",
+    "Email",
+    "Phone",
+    "Birthdate",
+    "Address",
+    "City",
+    "Zipcode",
+    "Country",
+    "State",
+    "Company",
+    "Member since",
+    "ESPN&IPNA amount",
+    "Membership",
+    "Gender",
+    "Note",
+]
+
+# Vollständig has the same structure as Neue Mitglieder
+COLS_VOLL: list[str] = COLS_NEUE
 
 # ── Column-name map ────────────────────────────────────────────────────────────
 COL: dict[str, str] = {
@@ -83,27 +134,12 @@ def get_col(df: pd.DataFrame, col: str, default: str = "") -> pd.Series:
     return pd.Series(default, index=df.index, dtype=str)
 
 
-def align_columns(source: pd.DataFrame, target_cols: list[str]) -> pd.DataFrame:
-    present = [c for c in target_cols if c in source.columns]
-    return source[present].copy()
-
-
-def dedup_append(
-    existing: pd.DataFrame, new_rows: pd.DataFrame
-) -> tuple[pd.DataFrame, int]:
-    for key in ("Email", "Membership Number #"):
-        if key in existing.columns and key in new_rows.columns:
-            break
-    else:
-        return pd.concat([existing, new_rows], ignore_index=True), len(new_rows)
-
-    combined = pd.concat([existing, new_rows], ignore_index=True)
-    has_key = combined[key].notna() & (combined[key].astype(str).str.strip() != "")
-    deduped = combined[has_key].drop_duplicates(subset=[key], keep="first")
-    no_key = combined[~has_key]
-    result = pd.concat([deduped, no_key]).sort_index().reset_index(drop=True)
-    added = len(result) - len(existing)
-    return result, added
+def select_columns(source: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
+    """Return a DataFrame with exactly *cols*, filling any missing ones with ''."""
+    result = pd.DataFrame(index=source.index)
+    for c in cols:
+        result[c] = source[c] if c in source.columns else ""
+    return result.reset_index(drop=True)
 
 
 def fmt_amount(val: object) -> str:
@@ -191,25 +227,21 @@ with st.sidebar:
     bestellungen_f = st.file_uploader("Bestellungen CSV", type=["csv"])
     kontakte_f = st.file_uploader("Kontakte CSV", type=["csv"])
     st.write("---")
-    ipna_f = st.file_uploader("IPNA Masterliste CSV", type=["csv"])
-    neue_f = st.file_uploader("Masterliste neue Mitglieder CSV", type=["csv"])
-    voll_f = st.file_uploader("Masterliste Vollständig CSV", type=["csv"])
-    st.write("---")
     pdf_f = st.file_uploader("Beiträge PDF (fee schedule)", type=["pdf"])
 
     run_btn = st.button(
-        "▶ Run update",
+        "▶ Run",
         type="primary",
-        disabled=not all([bestellungen_f, kontakte_f, ipna_f, neue_f, voll_f, pdf_f]),
+        disabled=not all([bestellungen_f, kontakte_f, pdf_f]),
     )
 
 # ── Main area ──────────────────────────────────────────────────────────────────
-if not all([bestellungen_f, kontakte_f, ipna_f, neue_f, voll_f, pdf_f]):
-    st.info("Upload all six files in the sidebar, then click **▶ Run update**.")
+if not all([bestellungen_f, kontakte_f, pdf_f]):
+    st.info("Upload all three files in the sidebar, then click **▶ Run**.")
     st.stop()
 
 if not run_btn and "results" not in st.session_state:
-    st.info("Files ready. Click **▶ Run update** in the sidebar to proceed.")
+    st.info("Files ready. Click **▶ Run** in the sidebar to proceed.")
     st.stop()
 
 if run_btn:
@@ -217,11 +249,6 @@ if run_btn:
         try:
             bestellungen = load_csv_bytes(bestellungen_f.read(), "Bestellungen")
             kontakte = load_csv_bytes(kontakte_f.read(), "Kontakte")
-            ipna_ml = load_csv_bytes(ipna_f.read(), "IPNA Masterliste", sep=";")
-            neue_ml = load_csv_bytes(
-                neue_f.read(), "Masterliste neue Mitglieder", sep=";"
-            )
-            voll_ml = load_csv_bytes(voll_f.read(), "Masterliste_full", sep=";")
             fee_lookup, mem_col, espn_ipna_col, ipna_amt_col = parse_pdf_fees(
                 pdf_f.read()
             )
@@ -279,27 +306,16 @@ if run_btn:
             }
         )
 
-        updated_ipna, added_ipna = dedup_append(
-            ipna_ml, align_columns(new_members, ipna_ml.columns.tolist())
-        )
-        updated_neue, added_neue = dedup_append(
-            neue_ml, align_columns(new_members, neue_ml.columns.tolist())
-        )
-        updated_voll, added_voll = dedup_append(
-            voll_ml, align_columns(new_members, voll_ml.columns.tolist())
-        )
+        # Slice to each masterliste schema
+        ipna_out = select_columns(new_members, COLS_IPNA)
+        neue_out = select_columns(new_members, COLS_NEUE)
+        voll_out = select_columns(new_members, COLS_VOLL)
 
         st.session_state["results"] = {
             "new_members": new_members,
-            "updated_ipna": updated_ipna,
-            "updated_neue": updated_neue,
-            "updated_voll": updated_voll,
-            "added_ipna": added_ipna,
-            "added_neue": added_neue,
-            "added_voll": added_voll,
-            "orig_ipna_len": len(ipna_ml),
-            "orig_neue_len": len(neue_ml),
-            "orig_voll_len": len(voll_ml),
+            "ipna_out": ipna_out,
+            "neue_out": neue_out,
+            "voll_out": voll_out,
             "fee_cols": (mem_col, espn_ipna_col, ipna_amt_col),
         }
 
@@ -311,19 +327,15 @@ if "results" not in st.session_state:
 
 res = st.session_state["results"]
 
-# Summary metrics
+# Summary
 st.subheader("Summary")
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("New members found", len(res["new_members"]))
-c2.metric("Added to IPNA Masterliste", res["added_ipna"])
-c3.metric("Added to Neue Mitglieder", res["added_neue"])
-c4.metric("Added to Vollständig", res["added_voll"])
+st.metric("New members found", len(res["new_members"]))
 
 st.write("---")
 
 # New members preview
 st.subheader("New members")
-st.dataframe(res["new_members"], use_container_width=True)
+st.dataframe(res["new_members"], width="stretch")
 
 st.write("---")
 
@@ -337,20 +349,16 @@ tab1, tab2, tab3 = st.tabs(
 )
 
 _downloads = [
-    (tab1, "updated_ipna", "IPNA Masterliste.csv", "windows-1252"),
-    (tab2, "updated_neue", "Masterliste neue Mitglieder.csv", "windows-1250"),
-    (tab3, "updated_voll", "Masterliste_full.csv", "windows-1252"),
+    (tab1, "ipna_out", "IPNA Masterliste.csv", "windows-1252"),
+    (tab2, "neue_out", "Masterliste neue Mitglieder.csv", "windows-1250"),
+    (tab3, "voll_out", "Masterliste_full.csv", "windows-1252"),
 ]
 
 for tab, key, filename, enc in _downloads:
     df = res[key]
     with tab:
-        orig_len = res[f"orig_{key.split('_')[1]}_len"]
-        st.caption(f"{orig_len} → {len(df)} rows")
-        st.dataframe(
-            df.tail(max(10, res[f"added_{key.split('_')[1]}"] + 2)),
-            use_container_width=True,
-        )
+        st.caption(f"{len(df)} row(s)")
+        st.data_editor(df, width="stretch", num_rows="dynamic", key=f"editor_{key}")
         st.download_button(
             label=f"⬇ Download {filename}",
             data=df_to_csv_bytes(df, encoding=enc),

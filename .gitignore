@@ -134,3 +134,4 @@ dmypy.json
 Thumbs.db
 
 !.python-version
+data/*
