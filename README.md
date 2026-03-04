@@ -50,6 +50,27 @@ The app opens in your default browser at `http://localhost:8501`.
 
 ---
 
+## Update the live app
+
+The app is deployed at **<https://espn-masterliste.streamlit.app/>**.
+
+Streamlit Community Cloud watches the `main` branch. Every push automatically rebuilds and redeploys the app — no CLI commands needed.
+
+```bash
+# 1. Make your changes locally, then stage them
+git add .
+
+# 2. Commit with a descriptive message
+git commit -m "describe your change"
+
+# 3. Push to main — redeployment starts immediately
+git push
+```
+
+The live app is updated within ~1 minute. You can watch the build log at [share.streamlit.io](https://share.streamlit.io) if needed.
+
+---
+
 ## Project structure
 
 ```
