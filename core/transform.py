@@ -79,6 +79,28 @@ def build_new_members(
         One row per new member with all columns needed by every output schema.
     """
 
+    # Pre-compute a normalised (lower-case, collapsed whitespace) → original key
+    # mapping so that _match_pdf_label avoids re-normalising every fee_lookup key
+    # on each call.
+    _norm_to_pdf_label: dict[str, str] = {
+        " ".join(str(k).lower().split()): k for k in fee_lookup
+    }
+
+    def _match_pdf_label(parsed: str) -> str:
+        """Return the fee_lookup key that matches *parsed* case-insensitively.
+
+        The ``Membership`` column in the output should show the exact label from
+        the PDF's "Membership" column.  ``parse_membership`` may produce a
+        normalised string that differs only in case or whitespace from the
+        PDF label, so a case-insensitive, whitespace-normalised lookup is used
+        as a fallback.
+        Falls back to *parsed* unchanged when no match is found.
+        """
+        if parsed in fee_lookup:
+            return parsed
+        parsed_norm = " ".join(parsed.lower().split())
+        return _norm_to_pdf_label.get(parsed_norm, parsed)
+
     def get_ipna_amount(membership: str) -> str:
         raw = fee_lookup.get(membership, {}).get(ipna_amt_col, "0 €")
         return fmt_amount(raw)
@@ -164,8 +186,10 @@ def build_new_members(
             "Company": company,
             "Member since": get_col(merged, COL["date_created"]),
             "ESPN&IPNA amount": get_col(merged, COL["price"]).apply(fmt_amount),
-            "IPNA amount": merged["Membership"].apply(get_ipna_amount),
-            "Membership": merged["Membership"],
+            "IPNA amount": merged["Membership"].apply(
+                lambda m: get_ipna_amount(_match_pdf_label(m))
+            ),
+            "Membership": merged["Membership"].apply(_match_pdf_label),
             "Gender": get_col(merged, COL["gender"]),
             "Note": "",
         }
