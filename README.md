@@ -70,6 +70,23 @@ Notes:
 - First startup may take a few seconds.
 - Windows SmartScreen may show a warning for unsigned executables.
 
+### 3a. If curl works but browser stays blank
+
+If `curl http://127.0.0.1:8501` returns HTML (often starting with `<!DOCTYPE html>`), the server is alive and the EXE is running. A blank browser page is then usually caused by browser/WebSocket restrictions or a stale process.
+
+This project already applies the key mitigations in the packaged launcher:
+- `--server.enableCORS=false`
+- `--server.enableXsrfProtection=false`
+- `--server.port 8501`
+
+Additional checks on Windows:
+- Close the EXE and stop old `python.exe` / `MasterlisteUpdater.exe` processes in Task Manager.
+- Start the EXE again and force-refresh the browser (`Ctrl` + `F5`).
+- Ensure no other tool occupies port `8501`.
+
+Build note:
+- The Windows build script includes `--collect-all streamlit`, which is required so bundled Streamlit frontend assets are available in the EXE.
+
 ### 4. Download the `.exe` from GitHub Actions
 
 Every run of the workflow `.github/workflows/build-windows-exe.yml` uploads an artifact named `MasterlisteUpdater-windows`.

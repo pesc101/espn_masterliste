@@ -21,7 +21,18 @@ def main() -> int:
         print(f"Could not find app file: {app_file}", file=sys.stderr)
         return 1
 
-    sys.argv = ["streamlit", "run", str(app_file)]
+    # Use explicit local-server flags to avoid browser/WebSocket issues in EXE runs.
+    sys.argv = [
+        "streamlit",
+        "run",
+        str(app_file),
+        "--server.address",
+        "127.0.0.1",
+        "--server.port",
+        "8501",
+        "--server.enableCORS=false",
+        "--server.enableXsrfProtection=false",
+    ]
     return stcli.main()
 
 
