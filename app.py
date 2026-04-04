@@ -9,6 +9,13 @@ Entry point. All logic lives in sub-packages:
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+APP_ROOT = Path(__file__).resolve().parent
+if str(APP_ROOT) not in sys.path:
+    sys.path.insert(0, str(APP_ROOT))
+
 import streamlit as st
 
 from core import (

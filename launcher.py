@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -20,6 +21,8 @@ def main() -> int:
     if not app_file.exists():
         print(f"Could not find app file: {app_file}", file=sys.stderr)
         return 1
+
+    os.chdir(app_file.parent)
 
     # Ensure packaged runs are not affected by a user's global Streamlit
     # development mode, which conflicts with explicit server.port.
