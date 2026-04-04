@@ -83,11 +83,69 @@ def build_new_members(
         raw = fee_lookup.get(membership, {}).get(ipna_amt_col, "0 €")
         return fmt_amount(raw)
 
-    def _coalesce(primary_key: str, fallback_key: str) -> pd.Series:
-        primary = get_col(merged, COL[primary_key])
-        if primary.eq("").all():
-            return get_col(merged, COL[fallback_key])
-        return primary.where(primary != "", get_col(merged, COL[fallback_key]))
+    def _norm_text(value: object) -> str:
+        if pd.isna(value):
+            return ""
+        return str(value).strip()
+
+    def _typed_addr_value(row: pd.Series, slot: str, part: str) -> str:
+        if part == "street" and slot == "addr1":
+            street = _norm_text(row.get(COL["addr1_street"], ""))
+            street2 = _norm_text(row.get(COL.get("addr1_street2", ""), ""))
+            return ", ".join([x for x in [street, street2] if x])
+        key = f"{slot}_{part}"
+        col_name = COL.get(key)
+        if not col_name:
+            return ""
+        return _norm_text(row.get(col_name, ""))
+
+    def _resolve_address_part(row: pd.Series, part: str) -> str:
+        membership = _norm_text(row.get("Membership", "")).lower()
+        prefer_shipping = "print journal" in membership
+
+        shipping_vals: list[str] = []
+        billing_vals: list[str] = []
+        untyped_vals: list[str] = []
+
+        for slot in ("addr1", "addr2"):
+            type_col = COL.get(f"{slot}_type")
+            addr_type = _norm_text(row.get(type_col, "")).lower() if type_col else ""
+            value = _typed_addr_value(row, slot, part)
+            if not value:
+                continue
+            if "shipping" in addr_type:
+                shipping_vals.append(value)
+            elif "billing" in addr_type:
+                billing_vals.append(value)
+            elif addr_type == "":
+                untyped_vals.append(value)
+
+        ordered_candidates = (
+            shipping_vals + billing_vals + untyped_vals
+            if prefer_shipping
+            else billing_vals + shipping_vals + untyped_vals
+        )
+        if ordered_candidates:
+            return ordered_candidates[0]
+
+        billing_key = {
+            "street": "billing_address",
+            "city": "billing_city",
+            "zip": "billing_zip",
+            "country": "billing_country",
+            "state": "billing_state",
+        }[part]
+        return _norm_text(row.get(COL[billing_key], ""))
+
+    address = merged.apply(lambda r: _resolve_address_part(r, "street"), axis=1)
+    city = merged.apply(lambda r: _resolve_address_part(r, "city"), axis=1)
+    zipcode = merged.apply(lambda r: _resolve_address_part(r, "zip"), axis=1)
+    country = merged.apply(lambda r: _resolve_address_part(r, "country"), axis=1)
+    state = merged.apply(lambda r: _resolve_address_part(r, "state"), axis=1)
+
+    company = get_col(merged, COL["company"]).where(
+        get_col(merged, COL["company"]) != "", get_col(merged, COL["billing_company"])
+    )
 
     full = pd.DataFrame(
         {
@@ -98,19 +156,17 @@ def build_new_members(
             "Email": get_col(merged, COL["email"]),
             "Phone": get_col(merged, COL["phone"]),
             "Birthdate": get_col(merged, COL["birthdate"]),
-            "Address": _coalesce("addr1_street", "billing_address"),
-            "City": _coalesce("addr1_city", "billing_city"),
-            "Zipcode": _coalesce("addr1_zip", "billing_zip"),
-            "Country": _coalesce("addr1_country", "billing_country"),
-            "State": _coalesce("addr1_state", "billing_state"),
-            "Company": _coalesce("company", "billing_company"),
+            "Address": address,
+            "City": city,
+            "Zipcode": zipcode,
+            "Country": country,
+            "State": state,
+            "Company": company,
             "Member since": get_col(merged, COL["date_created"]),
             "ESPN&IPNA amount": get_col(merged, COL["price"]).apply(fmt_amount),
             "IPNA amount": merged["Membership"].apply(get_ipna_amount),
             "Membership": merged["Membership"],
             "Gender": get_col(merged, COL["gender"]),
-            "Language": get_col(merged, COL["language"]),
-            "Labels": get_col(merged, COL["labels"]),
             "Note": "",
         }
     )
@@ -127,8 +183,9 @@ def slice_outputs(
     -------
     ipna_out, neue_out, voll_out : pd.DataFrame
     """
+    ipna_only = full[full["Membership"].str.contains("ESPN&IPNA", na=False)]
     return (
-        select_columns(full, COLS_IPNA),
+        select_columns(ipna_only, COLS_IPNA),
         select_columns(full, COLS_NEUE),
         select_columns(full, COLS_VOLL),
     )

@@ -26,16 +26,23 @@ COL: dict[str, str] = {
     "phone": "Phone 1",
     "birthdate": "Birthdate",
     "gender": "Gender",
+    "addr1_type": "Address 1 - Type",
     # Contacts – primary address (Address 1)
     "addr1_street": "Address 1 - Street",
+    "addr1_street2": "Address 1 - Street Line 2",
     "addr1_city": "Address 1 - City",
     "addr1_state": "Address 1 - State/Region",
     "addr1_zip": "Address 1 - Zip",
     "addr1_country": "Address 1 - Country",
+    # Contacts – secondary address (Address 2)
+    "addr2_type": "Address 2 - Type",
+    "addr2_street": "Address 2 - Street",
+    "addr2_city": "Address 2 - City",
+    "addr2_state": "Address 2 - State/Region",
+    "addr2_zip": "Address 2 - Zip",
+    "addr2_country": "Address 2 - Country",
     # Contacts – extra fields
     "company": "Company",
-    "labels": "Labels",
-    "language": "Language",
 }
 
 # ── Output column schemas ─────────────────────────────────────────────────────
@@ -63,7 +70,6 @@ COLS_IPNA: list[str] = [
 
 # Matches the reference file: includes "Membership Number #", no "IPNA amount"
 COLS_NEUE: list[str] = [
-    "Membership Number #",
     "Titel",
     "First Name",
     "Last Name",
@@ -83,8 +89,27 @@ COLS_NEUE: list[str] = [
     "Note",
 ]
 
-# Vollständig uses the same schema as Neue Mitglieder
-COLS_VOLL: list[str] = COLS_NEUE
+# Vollständig keeps the historical schema (incl. membership number)
+COLS_VOLL: list[str] = [
+    "Membership Number #",
+    "Titel",
+    "First Name",
+    "Last Name",
+    "Email",
+    "Phone",
+    "Birthdate",
+    "Address",
+    "City",
+    "Zipcode",
+    "Country",
+    "State",
+    "Company",
+    "Member since",
+    "ESPN&IPNA amount",
+    "Membership",
+    "Gender",
+    "Note",
+]
 
 # ── Encoding cascade used when auto-detecting CSV encoding ────────────────────
 ENCODING_FALLBACKS: list[str] = [
