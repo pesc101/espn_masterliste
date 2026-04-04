@@ -11,13 +11,6 @@ from core.io import df_to_csv_bytes, df_to_excel_bytes
 # (filename, session-state key, download encoding)
 _MASTERLISTE_CONFIG = [
     ("IPNA Masterliste", "ipna_out", "IPNA Masterliste.csv", "windows-1252"),
-    (
-        "Masterliste neue Mitgl.",
-        "neue_out",
-        "Masterliste neue Mitglieder.csv",
-        "windows-1250",
-    ),
-    ("Masterliste Vollständig", "voll_out", "Masterliste_full.csv", "windows-1252"),
 ]
 
 
@@ -33,6 +26,13 @@ def render_results(res: dict) -> None:
     # ── New members preview ────────────────────────────────────────────────────
     st.subheader("New members")
     st.dataframe(res["new_members"], width="stretch")
+    st.download_button(
+        label="⬇ Download New Members.xlsx",
+        data=df_to_excel_bytes(res["new_members"], sheet_name="NewMembers"),
+        file_name="New Members.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        key="dl_xlsx_new_members",
+    )
 
     st.write("---")
 
