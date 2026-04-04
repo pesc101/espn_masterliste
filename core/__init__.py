@@ -1,5 +1,5 @@
 from .config import COL, COLS_IPNA, COLS_NEUE, COLS_VOLL, ENCODING_FALLBACKS
-from .io import load_csv_bytes, df_to_csv_bytes
+from .io import load_csv_bytes, df_to_csv_bytes, df_to_excel_bytes
 from .pdf import parse_pdf_fees
 from .transform import (
     fmt_amount,
@@ -18,6 +18,7 @@ __all__ = [
     "ENCODING_FALLBACKS",
     "load_csv_bytes",
     "df_to_csv_bytes",
+    "df_to_excel_bytes",
     "parse_pdf_fees",
     "fmt_amount",
     "get_col",

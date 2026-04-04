@@ -184,8 +184,12 @@ def slice_outputs(
     ipna_out, neue_out, voll_out : pd.DataFrame
     """
     ipna_only = full[full["Membership"].str.contains("ESPN&IPNA", na=False)]
+    neue_out = select_columns(full, COLS_NEUE).drop(
+        columns=["IPNA amount"],
+        errors="ignore",
+    )
     return (
         select_columns(ipna_only, COLS_IPNA),
-        select_columns(full, COLS_NEUE),
+        neue_out,
         select_columns(full, COLS_VOLL),
     )

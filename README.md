@@ -106,13 +106,13 @@ If you publish a GitHub Release, the workflow also attaches `MasterlisteUpdater.
 2. **Kontakte CSV** – upload the contacts export (comma-separated, UTF-8).  
 3. **Beiträge PDF** – upload the fee-schedule PDF.  
 4. Click **▶ Run**.  
-5. Preview the generated new-members table and download the three masterlists:
+5. Preview the generated new-members table and download the three masterlists (Excel and CSV):
 
-| File | Encoding |
-|------|----------|
-| `IPNA Masterliste.csv` | windows-1252 |
-| `Masterliste neue Mitglieder.csv` | windows-1250 |
-| `Masterliste_full.csv` | windows-1252 |
+| Excel file | CSV file | CSV encoding |
+|------------|----------|--------------|
+| `IPNA Masterliste.xlsx` | `IPNA Masterliste.csv` | windows-1252 |
+| `Masterliste neue Mitglieder.xlsx` | `Masterliste neue Mitglieder.csv` | windows-1250 |
+| `Masterliste_full.xlsx` | `Masterliste_full.csv` | windows-1252 |
 
 ---
 

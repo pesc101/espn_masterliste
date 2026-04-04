@@ -27,3 +27,11 @@ def df_to_csv_bytes(df: pd.DataFrame, encoding: str = "utf-8") -> bytes:
     buf = io.BytesIO()
     df.to_csv(buf, sep=";", index=False, encoding=encoding)
     return buf.getvalue()
+
+
+def df_to_excel_bytes(df: pd.DataFrame, sheet_name: str = "Masterliste") -> bytes:
+    """Serialise *df* to an XLSX file and return the raw bytes."""
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name=sheet_name)
+    return buf.getvalue()

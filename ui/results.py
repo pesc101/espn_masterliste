@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from core.io import df_to_csv_bytes
+from core.io import df_to_csv_bytes, df_to_excel_bytes
 
 # (filename, session-state key, download encoding)
 _MASTERLISTE_CONFIG = [
@@ -50,6 +50,16 @@ def render_results(res: dict) -> None:
                 num_rows="dynamic",
                 key=f"editor_{key}",
             )
+
+            excel_filename = filename.replace(".csv", ".xlsx")
+            st.download_button(
+                label=f"⬇ Download {excel_filename}",
+                data=df_to_excel_bytes(df),
+                file_name=excel_filename,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key=f"dl_xlsx_{key}",
+            )
+
             st.download_button(
                 label=f"⬇ Download {filename}",
                 data=df_to_csv_bytes(df, encoding=enc),
