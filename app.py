@@ -9,7 +9,15 @@ Entry point. All logic lives in sub-packages:
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import streamlit as st
+
+# Ensure local packages resolve both in source runs and in PyInstaller unpack dirs.
+APP_DIR = Path(__file__).resolve().parent
+if str(APP_DIR) not in sys.path:
+    sys.path.insert(0, str(APP_DIR))
 
 from core import (
     COL,
