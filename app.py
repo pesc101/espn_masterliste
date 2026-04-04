@@ -9,13 +9,6 @@ Entry point. All logic lives in sub-packages:
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
-APP_ROOT = Path(__file__).resolve().parent
-if str(APP_ROOT) not in sys.path:
-    sys.path.insert(0, str(APP_ROOT))
-
 import streamlit as st
 
 from core import (
@@ -57,10 +50,17 @@ if not inputs.run_btn and "results" not in st.session_state:
 if inputs.run_btn:
     with st.spinner("Processing…"):
         try:
-            bestellungen = load_csv_bytes(inputs.bestellungen_f.read(), "Bestellungen")
-            kontakte = load_csv_bytes(inputs.kontakte_f.read(), "Kontakte")
+            bestellungen_f = inputs.bestellungen_f
+            kontakte_f = inputs.kontakte_f
+            pdf_f = inputs.pdf_f
+            if bestellungen_f is None or kontakte_f is None or pdf_f is None:
+                st.error("Please upload all required files.")
+                st.stop()
+
+            bestellungen = load_csv_bytes(bestellungen_f.read(), "Bestellungen")
+            kontakte = load_csv_bytes(kontakte_f.read(), "Kontakte")
             fee_lookup, mem_col, espn_ipna_col, ipna_amt_col = parse_pdf_fees(
-                inputs.pdf_f.read()
+                pdf_f.read()
             )
         except Exception as exc:
             st.error(f"Error loading files: {exc}")
