@@ -32,7 +32,10 @@ def render_results(res: dict) -> None:
 
     # ── New members preview ────────────────────────────────────────────────────
     st.subheader("New members")
-    st.dataframe(res["new_members"], width="stretch")
+    st.dataframe(
+        res["new_members"].drop(columns=["IPNA amount"], errors="ignore"),
+        width="stretch",
+    )
 
     st.write("---")
 
