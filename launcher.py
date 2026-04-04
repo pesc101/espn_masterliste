@@ -21,11 +21,13 @@ def main() -> int:
         print(f"Could not find app file: {app_file}", file=sys.stderr)
         return 1
 
-    # Use explicit local-server flags to avoid browser/WebSocket issues in EXE runs.
+    # Ensure packaged runs are not affected by a user's global Streamlit
+    # development mode, which conflicts with explicit server.port.
     sys.argv = [
         "streamlit",
         "run",
         str(app_file),
+        "--global.developmentMode=false",
         "--server.address",
         "127.0.0.1",
         "--server.port",
