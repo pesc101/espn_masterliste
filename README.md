@@ -34,6 +34,55 @@ The app opens in your default browser at `http://localhost:8501`.
 
 ---
 
+## Build a Windows executable (`.exe`)
+
+This project includes a PyInstaller entrypoint and build scripts to produce a standalone Windows app.
+
+### 1. Build on Windows
+
+PyInstaller cannot reliably cross-compile a Windows `.exe` from macOS/Linux, so run the build on a Windows machine:
+
+```powershell
+git clone https://github.com/pesc101/espn_masterliste.git
+cd espn_masterliste
+scripts\build_windows.ps1
+```
+
+If you use Command Prompt instead of PowerShell:
+
+```bat
+scripts\build_windows.bat
+```
+
+### 2. Find the executable
+
+After a successful build, the executable is at:
+
+```text
+dist\MasterlisteUpdater.exe
+```
+
+### 3. Run the executable
+
+Double-click `MasterlisteUpdater.exe`. It starts a local Streamlit server and opens your browser automatically.
+
+Notes:
+- First startup may take a few seconds.
+- Windows SmartScreen may show a warning for unsigned executables.
+
+### 4. Download the `.exe` from GitHub Actions
+
+Every run of the workflow `.github/workflows/build-windows-exe.yml` uploads an artifact named `MasterlisteUpdater-windows`.
+
+1. Open the **Actions** tab in this repository.
+2. Open a run of **Build Windows EXE**.
+3. In the **Artifacts** section, download `MasterlisteUpdater-windows`.
+4. Unzip it to get `MasterlisteUpdater.exe`.
+
+If you publish a GitHub Release, the workflow also attaches `MasterlisteUpdater.exe` directly to the release assets.
+
+---
+
 ## Usage
 
 1. **Bestellungen CSV** – upload the orders export (comma-separated, UTF-8).  
