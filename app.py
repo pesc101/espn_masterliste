@@ -23,7 +23,7 @@ from core import (
     COL,
     load_csv_bytes,
     parse_pdf_fees,
-    parse_membership,
+    resolve_membership_from_pdf,
     build_new_members,
     slice_outputs,
 )
@@ -85,16 +85,22 @@ if inputs.run_btn:
         merged = bestellungen.merge(
             kontakte, left_on=email_l, right_on=email_r, how="left"
         )
-        merged["Membership"] = merged[COL["item"]].apply(parse_membership)
+        merged["Membership"] = merged.apply(
+            lambda row: resolve_membership_from_pdf(
+                row.get(COL["item"], ""),
+                row.get(COL["price"], ""),
+                fee_lookup,
+                espn_ipna_col,
+            ),
+            axis=1,
+        )
 
         new_members = build_new_members(merged, fee_lookup, ipna_amt_col)
-        ipna_out, neue_out, voll_out = slice_outputs(new_members)
+        ipna_out, neue_out = slice_outputs(new_members)
 
         st.session_state["results"] = {
-            "new_members": new_members,
             "ipna_out": ipna_out,
             "neue_out": neue_out,
-            "voll_out": voll_out,
         }
 
     st.success("Done!")

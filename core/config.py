@@ -89,28 +89,6 @@ COLS_NEUE: list[str] = [
     "Note",
 ]
 
-# Vollständig keeps the historical schema (incl. membership number)
-COLS_VOLL: list[str] = [
-    "Membership Number #",
-    "Titel",
-    "First Name",
-    "Last Name",
-    "Email",
-    "Phone",
-    "Birthdate",
-    "Address",
-    "City",
-    "Zipcode",
-    "Country",
-    "State",
-    "Company",
-    "Member since",
-    "ESPN&IPNA amount",
-    "Membership",
-    "Gender",
-    "Note",
-]
-
 # ── Encoding cascade used when auto-detecting CSV encoding ────────────────────
 ENCODING_FALLBACKS: list[str] = [
     "utf-8",
