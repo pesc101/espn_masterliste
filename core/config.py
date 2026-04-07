@@ -70,6 +70,7 @@ COLS_IPNA: list[str] = [
 
 # Matches the reference file: includes "Membership Number #", no "IPNA amount"
 COLS_NEUE: list[str] = [
+    "Membership Number #",
     "Titel",
     "First Name",
     "Last Name",
